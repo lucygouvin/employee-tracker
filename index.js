@@ -3,10 +3,24 @@ const mysql = require('mysql2');
 
 const questions = [
     {
-        type:"input",
-        message: "enter anything",
-        name: "test"
+        type: "list",
+    message: "Select a shape: ",
+    choices: ["Square", "Triangle", "Circle"],
+        name: "test",
     }
 ]
 
-console.log(questions[0].name)
+function getAnswers() {
+    return inquirer.prompt(questions).then((answers) => {
+      if (answers.is_finished) {
+        return answers;
+      } else {
+        return getAnswers();
+      }
+    });
+  }
+  
+  getAnswers()
+    .then(console.log)
+    .catch((error) => {console.log(error)});
+
