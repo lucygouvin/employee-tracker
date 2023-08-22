@@ -1,8 +1,6 @@
 const inquirer = require("inquirer");
 const mysql = require('mysql2');
 
-
-
 // Connect to database
 const db = mysql.createConnection(
     {
@@ -16,17 +14,15 @@ const db = mysql.createConnection(
     console.log(`Connected to the classlist_db database.`)
     );
 
-db.promise().query("SELECT dept_name FROM departments")
-.then((response)=>{
-    let deptArray = []
-    response[0].forEach(element => {
-        deptArray.push(element.dept_name)
-        
-    });
-    console.log(deptArray)
-})
-.catch((error) => console.log(error))
-    
+
+function getDepts(){
+  db.promise().query("SELECT dept_name FROM departments")
+  .then((response) => {
+  console.log(response);
+  return response;
+  })
+}
+  
 
 const questions = [
   {
@@ -55,8 +51,9 @@ const questions = [
   },
   {
     // TODO: Change to list select
-    type: "input",
+    type: "list",
     message: "Select the role's department.",
+    choices: getDepts(),
     name: "addRoleDept",
     when: (answers) => (answers.startPrompt === "Add a role")
   },
@@ -105,14 +102,63 @@ function askQuestions() {
     return inquirer.prompt(questions).then((answers) => {
       if (answers.startPrompt === "Quit") {
         return answers;
-      } else {
-        console.log("loop finished")
-        console.log(answers)
-        return askQuestions();
+      } else if (answers.startPrompt === "View all departments"){
+        db.promise().query(`SELECT id, dept_name FROM departments`).then((response)=>{
+          console.log(response[0])
+          askQuestions()
+        })     
+      } else if (answers.startPrompt === "View all roles"){
+        db.promise().query(`SELECT id, title, department_id, salary FROM roles`).then((response)=>{
+          console.log(response[0])
+          askQuestions()
+        })     
+      }else if (answers.startPrompt === "View all employees"){
+        // TODO
+        // db.promise().query(`SELECT id, title, department_id, salary FROM roles`).then((response)=>{
+        //   console.log(response[0])
+        //   askQuestions()
+        // })
+      } else if (answers.startPrompt === "Add a department"){
+        db.promise().query(`INSERT INTO departments (dept_name) VALUES("${answers.addDeptName}")`).then(()=>{
+          console.log(`Added ${answers.addDeptName} to the database`)
+          askQuestions()
+        })
+      }else if (answers.startPrompt === "Add a role"){
+        // name, salary, and department
+        // Needs a Join?
+        db.promise().query(`INSERT INTO roles (title, salary, department)`)
       }
-    });
+
+    })
   }
-  
-//   askQuestions()
+
+  askQuestions()
+  // const test = getDepts()
+  // console.log("🚀 ~ file: index.js:137 ~ test:", test)
 
 
+
+
+
+
+
+
+
+
+// db.promise().query(`SELECT id FROM departments WHERE dept_name = "Marketing"`).then((response)=> console.log(response))
+// TODO
+// Handle viewing employees -- needs join
+// Format results
+// db.promise().query("SELECT dept_name FROM departments")
+// .then((response)=>{
+//     let deptArray = []
+//     response[0].forEach(element => {
+//         deptArray.push(element.dept_name)
+        
+//     });
+//     console.log(deptArray)
+// })
+// .catch((error) => console.log(error))
+
+// db.promise().query("SELECT id, dept_name FROM departments")
+// .then((response) => console.log(response[0]))
