@@ -37,10 +37,10 @@ function startProgram(){
         viewEmployees()
         break;
       case "Add a department":
-        // do function for adding department
+        addDepartment()
         break;
       case "Add a role":
-        // do function for adding role
+        addRole()
         break;
       case "Add an employee":
         // do function for adding an employee
@@ -57,35 +57,94 @@ function startProgram(){
 }
 
 function viewDepartments(){  
-  db.query(`SELECT id, dept_name FROM departments`, function(err, res){
-    if (err) throw err;
-    console.table(res)
-    startProgram()
-  })
-  // db.promise().query(`SELECT id, dept_name FROM departments`)
-  // .then((data) => console.table(data[0]))
-  // .catch((error) => console.log(error))
+  // db.query(`SELECT id, dept_name FROM departments`, function(err, res){
+  //   if (err) throw err;
+  //   console.table(res)
+  //   startProgram()
+  // })
+  db.promise().query(`SELECT id, name AS department FROM departments`)
+  .then((data) => {
+    console.table(data[0])
+    startProgram()}
+  )
+  .catch((error) => console.log(error))
 }
 
 function viewRoles(){
-  db.query(`SELECT roles.title, roles.id, departments.dept_name AS department, roles.salary*1000 AS salary
+  db.promise().query(`SELECT roles.title, roles.id, departments.name AS department, roles.salary*1000 AS salary
   FROM roles
-  JOIN departments ON roles.department_id = departments.id`, function(err, res){
-    if (err) throw err;
-    console.table(res)
+  JOIN departments ON roles.department_id = departments.id`)
+  .then((data) => {
+    console.table(data[0])
     startProgram()
   })
+  .catch((error) => console.log(error))
+
 }
 
 function viewEmployees(){
-  db.query(`SELECT employee.id, employee.first_name, employee.last_name, roles.title, departments.dept_name AS department, roles.salary*1000 AS salary, employee.manager_id
+  // TODO return the manager name not just the id
+  db.promise().query(`SELECT employee.id, employee.first_name, employee.last_name, roles.title, departments.name AS department, roles.salary*1000 AS salary, employee.manager_id
   FROM employee
   INNER JOIN roles ON roles.id = employee.role_id
-  INNER JOIN departments ON roles.department_id = departments.id`, function(err, res){
-    if (err) throw err;
-    console.table(res)
+  INNER JOIN departments ON roles.department_id = departments.id`)
+  .then((data) => {
+    console.table(data[0])
     startProgram()
   })
+  .catch((error) => console.log(error))
 }
+
+function addDepartment(){
+  inquirer.prompt(
+    [
+      {
+        type: "input",
+        message: "Enter the name of the department.",
+        name: "addDeptName",
+      }
+    ]
+  ).then((answers)=>{
+    db.promise().query(`INSERT INTO departments (name) VALUES("${answers.addDeptName}")`)
+    console.log(`Added ${answers.addDeptName} to the database`)
+    updateTables()
+    startProgram()
+  })
+  .catch((error) => console.log(error))
+}
+
+function addRole(){
+  db.promise().query("SELECT * FROM departments")
+  .then((data)=>{
+    const depts = data[0].map((dept)=> dept.name)
+    inquirer.prompt([
+      {
+        type: "input",
+        message: "Enter the role title.",
+        name: "addRoleTitle",
+      },
+      {
+        type: "input",
+        message: "Enter the salary for this role.",
+        name: "addRoleSalary",
+      },
+      {
+        type: "list",
+        message: "Select a department.",
+        choices: depts,
+        name: "addRoleDept",
+      },
+    ]).then((answers)=>{
+      db.query(`SELECT id FROM departments WHERE departments.name = "${answers.addRoleDept}"`, function (err, res){
+        if (err) console.log(err)
+        db.query(`INSERT INTO roles (title, salary, department_id) VALUES("${answers.addRoleTitle}", ${answers.addRoleSalary}, ${res[0].id})`)
+        console.log(`Added ${answers.addRoleTitle} to ${answers.addRoleDept}.`)
+        startProgram()
+      })
+    }).catch((error) => console.log(error))
+  })
+
+}
+
 
 startProgram()
