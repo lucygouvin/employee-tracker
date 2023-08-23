@@ -14,17 +14,16 @@ const db = mysql.createConnection(
     console.log(`Connected to the classlist_db database.`)
     );
 
-const questions =[
-  {
-    type: "list",
-    message: "What would you like to do?",
-    choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Quit"],
-    name: "startPrompt",
-  }
-]
 
 function startProgram(){
-  inquirer.prompt(questions)
+  inquirer.prompt([
+    {
+      type: "list",
+      message: "What would you like to do?",
+      choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Quit"],
+      name: "startPrompt",
+    }
+  ])
   .then((answers)=>{
     switch(answers.startPrompt){
       case "View all departments":
@@ -43,10 +42,10 @@ function startProgram(){
         addRole()
         break;
       case "Add an employee":
-        // do function for adding an employee
+        addEmployee()
         break;
       case "Update an employee role":
-        // do function for updating employee
+        updateEmployee()
         break;
       case "Quit":
         // do nothing, allow inquirer to end
@@ -107,7 +106,6 @@ function addDepartment(){
   ).then((answers)=>{
     db.promise().query(`INSERT INTO departments (name) VALUES("${answers.addDeptName}")`)
     console.log(`Added ${answers.addDeptName} to the database`)
-    updateTables()
     startProgram()
   })
   .catch((error) => console.log(error))
@@ -146,5 +144,98 @@ function addRole(){
 
 }
 
+function addEmployee() {
+  db.promise()
+    .query("SELECT first_name, last_name, id FROM employee")
+    .then((data) => {
+      db.query(`SELECT title FROM roles`, function (err, res) {
+        if (err) console.log(err);
+        const roles = res.map((role) => role.title);
+        const employees = data[0].map((emp) => ({
+          name: `${emp.first_name} ${emp.last_name}`,
+          id: emp.id,
+        }));
+
+        inquirer
+          .prompt([
+            {
+              type: "input",
+              message: "Enter the employee's first name",
+              name: "addFirstName",
+            },
+            {
+              type: "input",
+              message: "Enter the employee's last name.",
+              name: "addLastName",
+            },
+            {
+              type: "list",
+              message: "Select the employee's role.",
+              choices: roles,
+              name: "addEmpRole",
+            },
+            {
+              type: "list",
+              message: "Select the employee's manager.",
+              choices: employees,
+              name: "addEmpMgr",
+            },
+          ])
+          .then((answers) => {
+            db.query(`SELECT id FROM roles WHERE roles.title = "${answers.addEmpRole}"`, function (err, res){
+              if (err) console.log(err)
+              const text = answers.addEmpMgr.split(" ")
+              db.query(`SELECT id FROM employee WHERE employee.first_name = "${(text[0])}"`, function (err, result){
+                db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES("${answers.addFirstName}", "${answers.addLastName}", ${res[0].id}, ${result[0].id})`)
+              console.log(`Added ${answers.addFirstName} ${answers.addLastName} to the database.`)
+              startProgram()
+              }) 
+            })
+          });
+      })
+    });
+}
+
+function updateEmployee(){
+  db.promise()
+    .query("SELECT first_name, last_name, id FROM employee")
+    .then((data) => {
+      db.query(`SELECT title FROM roles`, function (err, res) {
+        if (err) console.log(err);
+        const roles = res.map((role) => role.title);
+        const employees = data[0].map((emp) => ({
+          name: `${emp.first_name} ${emp.last_name}`,
+          id: emp.id,
+        }));
+
+        inquirer
+          .prompt([
+            {
+              type: "list",
+              message: "Which employee's role do you want to update?",
+              choices: employees,
+              name: "selectEmp",
+            },
+            {
+              type: "list",
+              message: "Which role do you want to assign to the selected employee?",
+              choices: roles,
+              name: "selectRole",
+            },
+          ])
+          .then((answers) => {
+            db.query(`SELECT id FROM roles WHERE roles.title = "${answers.selectRole}"`, function (err, res){
+              if (err) console.log(err)
+              const text = answers.selectEmp.split(" ")
+              db.query(`SELECT id FROM employee WHERE employee.first_name = "${(text[0])}"`, function (err, result){
+                db.query(`UPDATE employee SET role_id = ${res[0].id} WHERE employee.id = ${result[0].id}`)
+              console.log(`Updated ${answers.selectEmp}'s role to ${answers.selectRole}`)
+              startProgram()
+              }) 
+            })
+          });
+      })
+    });
+}
 
 startProgram()

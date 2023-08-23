@@ -13,3 +13,5 @@ SELECT employee.id, employee.first_name, employee.last_name, roles.title, depart
 FROM employee
 INNER JOIN roles ON roles.id = employee.role_id
 INNER JOIN departments ON roles.department_id = department.id
+
+SELECT 
