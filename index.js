@@ -81,13 +81,13 @@ function viewRoles(){
 
 }
 
-// Inner join all three tables to get all the information 
+// Inner join all three tables to get all the information. Do a left outer join to have the employee table reference itself
 function viewEmployees(){
-  // TODO return the manager name not just the id
-  db.promise().query(`SELECT employee.id, employee.first_name, employee.last_name, roles.title, departments.name AS department, roles.salary*1000 AS salary, employee.manager_id
-  FROM employee
-  INNER JOIN roles ON roles.id = employee.role_id
-  INNER JOIN departments ON roles.department_id = departments.id`)
+  db.promise().query(`SELECT emp.id, emp.first_name AS employee_first_name, emp.last_name AS employee_last_name, roles.title, departments.name AS department, roles.salary*1000 AS salary, manager.first_name AS manager_first_name, manager.last_name AS manager_last_name
+  FROM employee emp
+  INNER JOIN roles ON roles.id = emp.role_id
+  INNER JOIN departments ON roles.department_id = departments.id
+  LEFT OUTER JOIN employee manager ON emp.manager_id = manager.id`)
   .then((data) => {
     console.table(data[0])
     startProgram()
