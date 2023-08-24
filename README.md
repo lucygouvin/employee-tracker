@@ -7,7 +7,8 @@ This CLI application allows you to see the departments, roles, and employees of 
 
 ## Installation
 
-GitHub Repo: https://github.com/lucygouvin/employee-tracker
+GitHub Repo: https://github.com/lucygouvin/employee-tracker<br>
+Walkthrough video: https://drive.google.com/file/d/1WwLjOoC8sr-H-UzYVIpSu9mhckMKO_Hw/view<br>
 Run node index.js to begin
 
 ## Usage
